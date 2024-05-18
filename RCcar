@@ -1,0 +1,86 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial bluetooth(2, 3); // Bluetooth 모듈의 TX 핀을 2번 핀에 연결하고 RX 핀을 3번 핀에 연결합니다.
+int leftMotorPin1 = 5; // 좌측 모터의 방향 제어 핀 1
+int leftMotorPin2 = 6; // 좌측 모터의 방향 제어 핀 2
+int rightMotorPin1 = 10; // 우측 모터의 방향 제어 핀 1
+int rightMotorPin2 = 11; // 우측 모터의 방향 제어 핀 2
+
+void setup() {
+  // 모터 제어 핀을 출력으로 설정합니다.
+  pinMode(leftMotorPin1, OUTPUT);
+  pinMode(leftMotorPin2, OUTPUT);
+  pinMode(rightMotorPin1, OUTPUT);
+  pinMode(rightMotorPin2, OUTPUT);
+
+  // 블루투스 시리얼 통신을 설정합니다.
+  bluetooth.begin(9600);
+}
+
+void loop() {
+  // 블루투스로부터 메시지를 읽습니다.
+  if (bluetooth.available()) {
+    char command = bluetooth.read();
+
+    // 받은 메시지에 따라 동작을 수행합니다.
+    switch(command) {
+      case 'F': // 전진
+        moveForward();
+        break;
+      case 'B': // 후진
+        moveBackward();
+        break;
+      case 'L': // 좌회전
+        turnLeft();
+        break;
+      case 'R': // 우회전
+        turnRight();
+        break;
+      case 'S': // 정지
+        stopMotors();
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+// 전진 함수
+void moveForward() {
+  digitalWrite(leftMotorPin1, HIGH);
+  digitalWrite(leftMotorPin2, LOW);
+  digitalWrite(rightMotorPin1, HIGH);
+  digitalWrite(rightMotorPin2, LOW);
+}
+
+// 후진 함수
+void moveBackward() {
+  digitalWrite(leftMotorPin1, LOW);
+  digitalWrite(leftMotorPin2, HIGH);
+  digitalWrite(rightMotorPin1, LOW);
+  digitalWrite(rightMotorPin2, HIGH);
+}
+
+// 좌회전 함수
+void turnLeft() {
+  digitalWrite(leftMotorPin1, LOW);
+  digitalWrite(leftMotorPin2, HIGH);
+  digitalWrite(rightMotorPin1, HIGH);
+  digitalWrite(rightMotorPin2, LOW);
+}
+
+// 우회전 함수
+void turnRight() {
+  digitalWrite(leftMotorPin1, HIGH);
+  digitalWrite(leftMotorPin2, LOW);
+  digitalWrite(rightMotorPin1, LOW);
+  digitalWrite(rightMotorPin2, HIGH);
+}
+
+// 정지 함수
+void stopMotors() {
+  digitalWrite(leftMotorPin1, LOW);
+  digitalWrite(leftMotorPin2, LOW);
+  digitalWrite(rightMotorPin1, LOW);
+  digitalWrite(rightMotorPin2, LOW);
+}
