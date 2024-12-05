@@ -1,0 +1,142 @@
+#include <LiquidCrystal_I2C.h>      // LCD 라이브러리 추가
+#include <Wire.h>                   // 연결 라이브러리 추가
+#include "timer.h"                  // 타이머 라이브러리 추가
+#include "SoftReset.h"              // 재부팅 라이브러리 추가
+ 
+int state;                          // 핀볼 키트 작동에 대한 상태변수 정의
+int score;                          // 점수 저장할 변수 정의
+int MAX_score = 3000;               // 최대 점수값 정의, 이를 넘기면 게임 종료
+
+int buzzer = 2;                     // 부저 출력 핀 설정
+int crash = 3;                      // 충돌 센서 핀 설정
+int photon = 4;                     // 빛감지 센서 핀 설정
+int joy_x = 14;                     // 조이스틱 X값 설정
+int joy_y = 15;                     // 조이스틱 Y값 설정
+
+int photo_stat = 1;                 // 포토인터럽트 초기값 설정
+
+int melody_start[] = {261, 330, 392, 523};    // 도, 미, 솔, 도
+int melody_end[] = {349, 349, 349, 392, 392, 349, 440, 440, 440, 440};  // 파, 파, 파, 솔, 솔, 파, 라, 라, 라, 라
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);   //I2C LCD 모듈 설정
+
+  
+void setup() {
+  Wire.begin();
+  Serial.begin(9600);
+
+  pinMode(buzzer, OUTPUT);
+  pinMode(crash, INPUT_PULLUP);
+  pinMode(photon, INPUT_PULLUP);
+  pinMode(joy_x, INPUT_PULLUP);
+  pinMode(joy_y, INPUT_PULLUP);
+  
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(2,0);
+  lcd.print("IoT");
+  delay(500);
+  lcd.setCursor(7,0);
+  lcd.print("Pinball");
+  delay(500);
+  lcd.setCursor(0,1);
+  lcd.print("sumin game");
+  delay(500);
+  lcd.clear();
+
+  for(int i=0; i<4; i++){
+    tone(buzzer, melody_start[i]);
+    delay(250);
+    noTone(buzzer);
+  }
+  
+  score = 0;
+  state = 0;
+}
+
+void loop() {
+  int X_value = analogRead(joy_x); // 조이스틱의 x 값 읽어 오기
+  int Y_value = analogRead(joy_y); // 조이스틱의 y 값 읽어 오기
+  
+  if(state == 0){
+    lcd.setCursor(2,0);
+    lcd.print("Score :");
+    lcd.setCursor(0,1);
+    lcd.print("sumin game");
+    lcd.setCursor(10,0);    
+    lcd.print(score);    
+
+    if(digitalRead(crash) == 0){  // crash 값이 0이랑 같을 때 (충돌 했을 때 ) , 높은도 음이 나오고 , 점수가 100점 올라간다
+      tone(buzzer, 523);
+      delay(250);
+      noTone(buzzer);          
+      score += 100;
+      delay(200);
+    }
+    
+    if(digitalRead(photon) == 0){  // ??? 무슨 상황인지 적어주기 
+      if(photo_stat == 1){    
+        tone(buzzer, 523);
+        delay(250);
+        noTone(buzzer);    
+        score += 10;
+        photo_stat = 0;
+        delay(100);
+    }}
+
+    if(digitalRead(photon) == 1){ // ??? 무슨 상황인지 적어주기
+      if(photo_stat == 0){    
+        tone(buzzer, 523);
+        delay(250);
+        noTone(buzzer);    
+        score += 10;
+        photo_stat = 1;
+        delay(100);
+    }}    
+
+    if(analogRead(joy_x) > (X_value+15) || analogRead(joy_x) < (X_value-15)){ // || : 또는
+      tone(buzzer, 523);
+      delay(250);
+      noTone(buzzer);
+      score += 10;
+      delay(100);
+    }
+
+    if(analogRead(joy_y) > (Y_value+15) || analogRead(joy_y) < (Y_value-15)){ //
+      tone(buzzer, 523);
+      delay(250);
+      noTone(buzzer);
+      score += 10;
+      delay(100);
+    }
+  }
+
+  if(score == MAX_score || score > MAX_score){
+    state = 1;
+    lcd.clear();
+    for(int i=0; i<10; i++){
+      tone(buzzer, melody_end[i]);
+      delay(250);
+      noTone(buzzer);
+    }
+    
+    lcd.setCursor(1,0);
+    lcd.print("S T A G E");
+    delay(1000);
+    lcd.setCursor(6,1);
+    lcd.print("C L E A R");
+    delay(100);
+    
+    for(int i=0; i<2; i++){
+      lcd.noBacklight();
+      delay(100);
+      lcd.backlight();
+      delay(100);      
+    }
+    delay(2000);
+    soft_restart();
+  }
+
+  delay(200);
+}
